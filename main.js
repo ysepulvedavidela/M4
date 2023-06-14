@@ -1,34 +1,35 @@
-// Obtén una referencia al elemento en el que deseas mostrar los datos
-const resultadoElemento = document.getElementById('resultado');
+let urlBase = "https://swapi.dev/api/people/";
 
-// Realiza la solicitud utilizando fetch a la API Random User Generator
-fetch('https://randomuser.me/api/')
-  .then(response => response.json()) // Convierte la respuesta en formato JSON
-  .then(data => {
-    // Extrae el primer usuario de los resultados
-    const usuario = data.results[0];
+import Personaje from "./clases/personaje.js";
+const getData = async (id) => {
+    let response = await fetch(urlBase + id);
+    let data = await response.json();
+    let { name: nombre, height: estatura, mass: peso } = data;
+    let nuevoPersonaje = new Personaje(nombre, estatura, peso);
+    return nuevoPersonaje;
+};
 
-    // Obtén los detalles del usuario
-    const nombre = `${usuario.name.first} ${usuario.name.last}`;
-    const email = usuario.email;
-    const foto = usuario.picture.large;
+function* gen(idInicio, idTermino) {
+    for (let index = idInicio; index <= idTermino; index++) {
+        yield getData(index);
+    }
+}
+let g = gen(1, 5); // "Generator { }"
 
-    // Crea elementos para mostrar la información
-    const nombreElemento = document.createElement('p');
-    nombreElemento.textContent = `Nombre: ${nombre}`;
+let contenedorPersonajes = document.getElementById("personajes");
 
-    const emailElemento = document.createElement('p');
-    emailElemento.textContent = `Email: ${email}`;
+const cargarDatos = (personaje) => {
+    contenedorPersonajes.innerHTML += `<p>${personaje.nombre} - ${personaje.estatura} cm - ${personaje.peso} kg</p>`;
+};
 
-    const fotoElemento = document.createElement('img');
-    fotoElemento.src = foto;
-
-    // Agrega los elementos al elemento resultado
-    resultadoElemento.appendChild(nombreElemento);
-    resultadoElemento.appendChild(emailElemento);
-    resultadoElemento.appendChild(fotoElemento);
-  })
-  .catch(error => {
-    // Manejo de errores en caso de que la solicitud falle
-    console.error('Error:', error);
-  });
+btnSiguiente.addEventListener("click", async () => {
+    let resultado = g.next();
+    if (resultado.done) {
+        g = gen(1, 10);
+        contenedorPersonajes.innerHTML = "";
+        alert("No hay más elementos por mostrar.");
+    } else {
+        let personaje = await resultado.value;
+        cargarDatos(personaje);
+    }
+});
